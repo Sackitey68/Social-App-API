@@ -7,12 +7,16 @@ const {
   publishPost,
   updatePost,
   deletePost,
+  getMyPosts,
 } = require("../controllers/post.controller");
 
 const router = express.Router();
 
 // GET /api/posts — public feed
 router.get("/", optionalAuth, listPosts);
+
+
+router.get("/me", protect, getMyPosts);
 
 // GET /api/posts/:id — public single post
 router.get("/:id", optionalAuth, getPost);

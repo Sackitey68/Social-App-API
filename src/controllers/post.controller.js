@@ -246,6 +246,46 @@ const deletePost = asyncHandler(async (req, res) => {
   });
 });
 
+// MY POSTS
+const getMyPosts = asyncHandler(async (req, res) => {
+  const { page, limit, skip } = getPagination(req.query);
+  const sort = buildSort(req.query.sort, SORTABLE, "-timestamp");
+
+  // req.user is guaranteed by `protect`
+  const filter = { author: req.user._id };
+
+  // State filter (req #20). Default = 'all' → no state restriction.
+  const state = (req.query.state || "all").toLowerCase();
+  if (state === "draft" || state === "published") {
+    filter.state = state;
+  } else if (state !== "all") {
+    throw new ApiError(400, "state must be one of: draft, published, all");
+  }
+
+  const [posts, total] = await Promise.all([
+    Post.find(filter)
+      .sort(sort)
+      .skip(skip)
+      .limit(limit)
+      .populate("author", "first_name last_name username email"),
+    Post.countDocuments(filter),
+  ]);
+
+  res.status(200).json({
+    success: true,
+    data: {
+      posts: posts.map((p) => p.toJSON()),
+      pagination: {
+        page,
+        limit,
+        total,
+        pages: Math.ceil(total / limit),
+        state,
+      },
+    },
+  });
+});
+
 module.exports = {
   createPost,
   listPosts,
@@ -253,4 +293,5 @@ module.exports = {
   publishPost,
   updatePost,
   deletePost,
+  getMyPosts,
 };
