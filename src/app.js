@@ -1,11 +1,12 @@
-const express = require('express');
-const cors = require('cors');
-const helmet = require('helmet');
-const morgan = require('morgan');
-const rateLimit = require('express-rate-limit');
+const express = require("express");
+const cors = require("cors");
+const helmet = require("helmet");
+const morgan = require("morgan");
+const rateLimit = require("express-rate-limit");
+const authRoutes = require("./routes/auth.routes");
 
-const notFound = require('./middleware/notFound');
-const errorHandler = require('./middleware/errorHandler');
+const notFound = require("./middleware/notFound");
+const errorHandler = require("./middleware/errorHandler");
 
 const app = express();
 
@@ -13,42 +14,45 @@ const app = express();
 app.use(helmet());
 app.use(cors());
 
-// Body parsing 
+// Body parsing
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Logging (skip in test env to keep test output clean) 
-if (process.env.NODE_ENV !== 'test') {
-  app.use(morgan('dev'));
+// Logging (skip in test env to keep test output clean)
+if (process.env.NODE_ENV !== "test") {
+  app.use(morgan("dev"));
 }
 
-// Global rate limiter 
+// Global rate limiter
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100,                 // 100 requests per window per IP
+  max: 100, // 100 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
   message: {
     success: false,
-    message: 'Too many requests, please try again later.',
+    message: "Too many requests, please try again later.",
   },
 });
-app.use('/api', limiter);
+app.use("/api", limiter);
 
-// Health check 
-app.get('/health', (req, res) => {
+// Health check
+app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
-    message: 'Social Blog API is healthy',
-    environment: process.env.NODE_ENV || 'development',
+    message: "Social Blog API is healthy",
+    environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
   });
 });
 
-// Root 
-app.get('/', (req, res) => {
-  res.json({ message: 'Social Blog API is running' });
+// Root
+app.get("/", (req, res) => {
+  res.json({ message: "Social Blog API is running" });
 });
+
+// API routes
+app.use("/api/auth", authRoutes);
 
 // 404 + Error handlers
 app.use(notFound);
