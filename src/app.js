@@ -54,6 +54,23 @@ app.get("/", (req, res) => {
 // API routes
 app.use("/api/auth", authRoutes);
 
+// TEMPORARY — used to verify auth middleware
+const { protect, optionalAuth } = require("./middleware/auth");
+app.get("/api/_test/protected", protect, (req, res) => {
+  res.json({
+    success: true,
+    message: "Access granted",
+    user: req.user.toJSON(),
+  });
+});
+app.get("/api/_test/optional", optionalAuth, (req, res) => {
+  res.json({
+    success: true,
+    authenticated: Boolean(req.user),
+    user: req.user ? req.user.toJSON() : null,
+  });
+});
+
 // 404 + Error handlers
 app.use(notFound);
 app.use(errorHandler);
