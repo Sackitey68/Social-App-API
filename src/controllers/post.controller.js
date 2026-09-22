@@ -167,7 +167,7 @@ const publishPost = asyncHandler(async (req, res) => {
   });
 });
 
-// ---------- EDIT ----------
+// EDIT
 const EDITABLE = ["title", "content", "tags"];
 
 const updatePost = asyncHandler(async (req, res) => {
@@ -219,4 +219,38 @@ const updatePost = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createPost, listPosts, getPost, publishPost, updatePost };
+// ---------- DELETE ----------
+const deletePost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid post id");
+  }
+
+  const post = await Post.findById(id);
+  if (!post) {
+    throw new ApiError(404, "Post not found");
+  }
+
+  // Owner-only (req #11)
+  if (String(post.author) !== String(req.user._id)) {
+    throw new ApiError(403, "You are not the owner of this post");
+  }
+
+  await Post.deleteOne({ _id: post._id });
+
+  res.status(200).json({
+    success: true,
+    message: "Post deleted successfully",
+    data: { id: post.id },
+  });
+});
+
+module.exports = {
+  createPost,
+  listPosts,
+  getPost,
+  publishPost,
+  updatePost,
+  deletePost,
+};

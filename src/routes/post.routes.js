@@ -6,6 +6,7 @@ const {
   getPost,
   publishPost,
   updatePost,
+  deletePost,
 } = require("../controllers/post.controller");
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router.get("/:id", optionalAuth, getPost);
 // POST /api/posts — private
 router.post("/", protect, createPost);
 router.patch("/:id/publish", protect, publishPost);
-router.patch('/:id', protect, updatePost);
+router.patch("/:id", protect, updatePost);
+router.delete("/:id", protect, deletePost);
 
 module.exports = router;
