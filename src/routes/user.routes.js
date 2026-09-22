@@ -1,13 +1,21 @@
+// src/routes/user.routes.js
 const express = require('express');
 const { protect } = require('../middleware/auth');
-const { followUser, unfollowUser } = require('../controllers/user.controller');
+const {
+  followUser,
+  unfollowUser,
+  getFollowing,
+  getFollowers,
+} = require('../controllers/user.controller');
 
 const router = express.Router();
 
-// POST /api/users/:id/follow
-router.post('/:id/follow', protect, followUser);
+// Public
+router.get('/:id/following', getFollowing);
+router.get('/:id/followers', getFollowers);
 
-// DELETE /api/users/:id/follow
+// Private
+router.post('/:id/follow', protect, followUser);
 router.delete('/:id/follow', protect, unfollowUser);
 
 module.exports = router;
