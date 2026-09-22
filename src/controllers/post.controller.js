@@ -167,4 +167,56 @@ const publishPost = asyncHandler(async (req, res) => {
   });
 });
 
-module.exports = { createPost, listPosts, getPost, publishPost };
+// ---------- EDIT ----------
+const EDITABLE = ["title", "content", "tags"];
+
+const updatePost = asyncHandler(async (req, res) => {
+  const { id } = req.params;
+
+  if (!mongoose.Types.ObjectId.isValid(id)) {
+    throw new ApiError(400, "Invalid post id");
+  }
+
+  const post = await Post.findById(id);
+  if (!post) {
+    throw new ApiError(404, "Post not found");
+  }
+
+  // Owner-only (req #10)
+  if (String(post.author) !== String(req.user._id)) {
+    throw new ApiError(403, "You are not the owner of this post");
+  }
+
+  // Whitelist — silently ignore anything else (state, author, counters, etc.)
+  const updates = {};
+  for (const field of EDITABLE) {
+    if (req.body[field] !== undefined) {
+      updates[field] = req.body[field];
+    }
+  }
+
+  if (Object.keys(updates).length === 0) {
+    throw new ApiError(
+      400,
+      `No editable fields provided. Allowed: ${EDITABLE.join(", ")}`,
+    );
+  }
+
+  if (updates.tags !== undefined && !Array.isArray(updates.tags)) {
+    throw new ApiError(400, "tags must be an array of strings");
+  }
+
+  // Apply updates
+  Object.assign(post, updates);
+  await post.save();
+
+  await post.populate("author", "first_name last_name username email");
+
+  res.status(200).json({
+    success: true,
+    message: "Post updated successfully",
+    data: { post: post.toJSON() },
+  });
+});
+
+module.exports = { createPost, listPosts, getPost, publishPost, updatePost };
