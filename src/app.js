@@ -31,6 +31,9 @@ const limiter = rateLimit({
   max: 100, // 100 requests per window per IP
   standardHeaders: true,
   legacyHeaders: false,
+
+  // Skip entirely in test env so our test suite can hammer the API freely
+  skip: () => process.env.NODE_ENV === "test",
   message: {
     success: false,
     message: "Too many requests, please try again later.",
