@@ -1,11 +1,14 @@
 const express = require('express');
 const { protect, optionalAuth } = require('../middleware/auth');
-const { createPost, listPosts } = require('../controllers/post.controller');
+const { createPost, listPosts, getPost } = require('../controllers/post.controller');
 
 const router = express.Router();
 
-// GET /api/posts — public 
+// GET /api/posts — public feed
 router.get('/', optionalAuth, listPosts);
+
+// GET /api/posts/:id — public single post (owners can see their drafts)
+router.get('/:id', optionalAuth, getPost);
 
 // POST /api/posts — private
 router.post('/', protect, createPost);
