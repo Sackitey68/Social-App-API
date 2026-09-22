@@ -3,8 +3,9 @@ const cors = require("cors");
 const helmet = require("helmet");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
-const authRoutes = require("./routes/auth.routes");
 
+const authRoutes = require("./routes/auth.routes");
+const postRoutes = require('./routes/post.routes');
 const notFound = require("./middleware/notFound");
 const errorHandler = require("./middleware/errorHandler");
 
@@ -48,28 +49,29 @@ app.get("/health", (req, res) => {
 
 // Root
 app.get("/", (req, res) => {
-  res.json({ message: "Social Blog API is running" });
+  res.json({ message: "Social API API is running" });
 });
 
 // API routes
 app.use("/api/auth", authRoutes);
+app.use('/api/posts', postRoutes);
 
 // TEMPORARY — used to verify auth middleware
-const { protect, optionalAuth } = require("./middleware/auth");
-app.get("/api/_test/protected", protect, (req, res) => {
-  res.json({
-    success: true,
-    message: "Access granted",
-    user: req.user.toJSON(),
-  });
-});
-app.get("/api/_test/optional", optionalAuth, (req, res) => {
-  res.json({
-    success: true,
-    authenticated: Boolean(req.user),
-    user: req.user ? req.user.toJSON() : null,
-  });
-});
+// const { protect, optionalAuth } = require("./middleware/auth");
+// app.get("/api/_test/protected", protect, (req, res) => {
+//   res.json({
+//     success: true,
+//     message: "Access granted",
+//     user: req.user.toJSON(),
+//   });
+// });
+// app.get("/api/_test/optional", optionalAuth, (req, res) => {
+//   res.json({
+//     success: true,
+//     authenticated: Boolean(req.user),
+//     user: req.user ? req.user.toJSON() : null,
+//   });
+// });
 
 // 404 + Error handlers
 app.use(notFound);
