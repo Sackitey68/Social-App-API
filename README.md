@@ -82,7 +82,7 @@ Auth header for protected routes: `Authorization: Bearer <token>`
 ```bash
 curl -X POST http://localhost:3000/api/auth/signup \
   -H "Content-Type: application/json" \
-  -d '{"first_name":"Ama","last_name":"Mensah","username":"ama_mensah","email":"ama@example.com","password":"secret123"}'
+  -d '{"first_name":"Tettey","last_name":"Kwame","username":"tettey_kwame","email":"kwame@example.com","password":"secret1234"}'
 ```
 
 ### Posts — `/api/posts`
