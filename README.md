@@ -1,42 +1,172 @@
-cat > README.md << 'EOF'
 # Social Blog API
 
-A production-ready RESTful API for a social blogging platform — built with **Node.js**, **Express**, and **MongoDB**. Supports JWT authentication, draft/published posts, follow relationships, likes, pagination, filtering, search, and full test coverage.
+A RESTful API for a social blogging platform — **Node.js**, **Express**, **MongoDB**. JWT auth, draft/published posts, follows, likes, pagination, search, sorting, and full test coverage.
 
-## Live Demo
+- **Live URL:** https://social-app-api-04nr.onrender.com
+- **Health check:**  https://social-app-api-04nr.onrender.com/health
 
-- **API Base URL:** _add your deployed URL here after Step 21_
-- **Health check:** `GET /health`
+> Render free tier sleeps after 15 min of inactivity. First request may take ~60s.
+
+---
 
 ## Features
 
-- 🔐 **JWT authentication** — signup, signin, 1-hour token expiry
-- 📝 **Posts** — draft → published workflow, owner-only edits and deletes
-- 🏷️ **Tags, search, sort** — full-text search across title/tags/author; sort by recency, likes, or comments
-- 👥 **Social graph** — follow/unfollow, followers and following lists
-- ❤️ **Likes** — idempotent like/unlike with a counter that always matches the Like documents
-- 📄 **Pagination** — every list endpoint is paginated, defaults to 20 per page
-- 🧪 **Tests** — 100+ Jest + Supertest tests covering every endpoint
-- 🛡️ **Security** — Helmet, CORS, rate limiting, bcrypt hashing, user-enumeration protection
+- JWT auth (signup, signin, 1-hour expiry, bcrypt hashed passwords)
+- Posts with draft → published workflow (owner-only mutations)
+- Tags, search (title / tags / author), sorting (timestamp, likes, comments)
+- Follow / unfollow + followers & following lists
+- Idempotent like / unlike with counter that stays in sync
+- Pagination on every list endpoint (default 20/page)
+- 100+ Jest + Supertest tests covering every endpoint
 
-## Tech Stack
+---
 
-| Layer | Choice |
-|-------|--------|
-| Runtime | Node.js |
-| Framework | Express |
-| Database | MongoDB + Mongoose |
-| Auth | JSON Web Tokens (jsonwebtoken) |
-| Hashing | bcryptjs |
-| Testing | Jest + Supertest |
-| Security | Helmet, CORS, express-rate-limit |
-
-## Getting Started
-
-### 1. Clone and install
+## Setup
 
 ```bash
-git clone https://github.com/Sackitey68/Social-App-API
-cd social-App-Api
+git clone https://github.com/sackitey68/Social-App-API.git
+cd Social-App-API
 npm install
+npm run dev               # or: npm start
 ```
+
+Server runs at `http://localhost:3000`.
+
+Verify:
+
+```bash
+curl http://localhost:3000/health
+```
+
+---
+
+## Environment Variables
+
+| Key | Description |
+|-----|-------------|
+| `NODE_ENV` | `development` / `production` / `test` |
+| `PORT` | Server port (default `3000`) |
+| `MONGO_URI` | MongoDB connection string (local or Atlas) |
+| `JWT_SECRET` | Long random string (32+ chars) |
+| `JWT_EXPIRES_IN` | Token lifetime (default `1h`) |
+
+Generate a secret:
+
+```bash
+node -e "console.log(require('crypto').randomBytes(48).toString('hex'))"
+```
+
+---
+
+## Tests
+
+```bash
+npm test
+```
+
+Tests run against a separate `social_blog_test` database (derived from `MONGO_URI`) so your dev data is untouched.
+
+---
+
+## API Reference
+
+Auth header for protected routes: `Authorization: Bearer <token>`
+
+### Auth — `/api/auth`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/signup` | — | Register (returns user + JWT) |
+| POST | `/signin` | — | Sign in (returns user + JWT) |
+
+```bash
+curl -X POST http://localhost:3000/api/auth/signup \
+  -H "Content-Type: application/json" \
+  -d '{"first_name":"Ama","last_name":"Mensah","username":"ama_mensah","email":"ama@example.com","password":"secret123"}'
+```
+
+### Posts — `/api/posts`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| GET | `/` | Public | List published posts |
+| GET | `/me` | ✅ | List own posts (draft + published) |
+| GET | `/:id` | Public | Get a single post (drafts visible to owner only) |
+| POST | `/` | ✅ | Create post (always starts as draft) |
+| PATCH | `/:id/publish` | Owner | Publish draft |
+| PATCH | `/:id` | Owner | Edit title / content / tags |
+| DELETE | `/:id` | Owner | Delete post |
+
+**`GET /posts` query params:** `page`, `limit`, `search`, `tag`, `author`, `sort`
+(`sort` accepts `timestamp`, `-timestamp`, `like_count`, `-like_count`, `comment_count`, `-comment_count`)
+
+**`GET /posts/me` query params:** `page`, `limit`, `state=draft|published|all`, `sort`
+
+### Likes — `/api/posts/:id/like`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/:id/like` | ✅ | Like a published post (idempotent) |
+| DELETE | `/:id/like` | ✅ | Unlike (idempotent) |
+
+### Users & Follows — `/api/users`
+
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| POST | `/:id/follow` | ✅ | Follow a user |
+| DELETE | `/:id/follow` | ✅ | Unfollow |
+| GET | `/:id/followers` | Public | List followers |
+| GET | `/:id/following` | Public | List following |
+
+### Health
+
+```bash
+curl http://localhost:3000/health
+```
+
+---
+
+## Project Structure
+
+```
+src/
+├── config/        # Mongo connection
+├── controllers/   # auth, post, user, like
+├── middleware/    # auth, errorHandler, notFound
+├── models/        # User, Post, Follow, Like
+├── routes/        # Express routers
+├── utils/         # token, asyncHandler, query, validate
+├── app.js         # Express app (exported for tests)
+└── server.js      # DB connect + listen
+tests/             # Jest + Supertest suites
+docs/              # Postman collection
+```
+
+---
+
+## Design Notes
+
+- **`app.js` / `server.js` split** — app is exported so Supertest can drive it without a listener.
+- **`asyncHandler` wrapper** — thrown errors reach the central error handler automatically.
+- **Whitelisted updates** — `PATCH /posts/:id` accepts only `title`, `content`, `tags`.
+- **Draft privacy** — drafts return `404` to non-owners (no enumeration).
+- **Compound unique indexes** — `Follow(follower, following)`, `Like(user, post)`.
+- **Idempotent like/unlike** — `like_count` always matches `Like` documents.
+- **Enumeration protection** — signin uses the same 401 message for wrong email and wrong password.
+- **Rate limiter** — 100 req / 15 min per IP in prod; disabled in tests.
+
+---
+
+## Scripts
+
+| Command | Description |
+|---------|-------------|
+| `npm start` | Run in production |
+| `npm run dev` | Run with nodemon |
+| `npm test` | Run test suite |
+
+---
+
+## License
+
+MIT — see [LICENSE](./LICENSE).
