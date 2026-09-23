@@ -45,7 +45,7 @@ app.use("/api", limiter);
 app.get("/health", (req, res) => {
   res.status(200).json({
     success: true,
-    message: "Social Blog API is healthy",
+    message: "Social App API is healthy",
     environment: process.env.NODE_ENV || "development",
     timestamp: new Date().toISOString(),
   });
@@ -53,7 +53,12 @@ app.get("/health", (req, res) => {
 
 // Root
 app.get("/", (req, res) => {
-  res.json({ message: "Social API is running" });
+  res.json({
+    success: true,
+    message: "Social App API is healthy",
+    environment: "production",
+    timestamp: new Date().toISOString(),
+  });
 });
 
 // API routes
