@@ -27,6 +27,7 @@ A RESTful API for a social blogging platform — **Node.js**, **Express**, **Mon
 git clone https://github.com/sackitey68/Social-App-API.git
 cd Social-App-API
 npm install
+cp .env.example .env      # Fill in MONGO_URI + JWT_SECRET
 npm run dev               # or: npm start
 ```
 
